@@ -1,0 +1,159 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+    id 'signing'
+}
+
+android {
+    namespace 'ca.weblite.fridablocker'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
+        
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+}
+
+dependencies {
+
+    implementation libs.appcompat
+    implementation libs.material
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}
+
+// Library version
+ext.libVersion = '1.0.0'
+
+// Source and Javadoc tasks
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
+
+task androidJavadocJar(type: Jar) {
+    archiveClassifier.set('javadoc')
+    // Create empty javadoc jar since we don't have extensive docs yet
+    from javadoc.destinationDir
+}
+
+// Publishing configuration for Maven Central Portal
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                groupId = 'ca.weblite'
+                artifactId = 'fridablocker'
+                version = libVersion
+                
+                artifact bundleReleaseAar
+                artifact androidSourcesJar
+                artifact androidJavadocJar
+                
+                pom {
+                    name = 'FridaBlocker'
+                    description = 'Android native library for detecting Frida instrumentation framework'
+                    url = 'https://github.com/shannah/FridaBlocker'
+                    
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    
+                    developers {
+                        developer {
+                            id = 'shannah'
+                            name = 'Steve Hannah'
+                            email = 'steve@weblite.ca'
+                        }
+                    }
+                    
+                    scm {
+                        connection = 'scm:git:git://github.com/shannah/FridaBlocker.git'
+                        developerConnection = 'scm:git:ssh://github.com/shannah/FridaBlocker.git'
+                        url = 'https://github.com/shannah/FridaBlocker'
+                    }
+                }
+                
+                // Add dependencies to POM
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    
+                    configurations.implementation.allDependencies.each {
+                        if(it.name != 'unspecified') {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                            dependencyNode.appendNode('scope', 'runtime')
+                        }
+                    }
+                }
+            }
+        }
+        
+        repositories {
+            maven {
+                name = "local"
+                url = uri("${rootProject.buildDir}/repo")
+            }
+            
+            maven {
+                name = "central"
+                url = "https://central.sonatype.com/api/v1/publisher/deployments/upload/"
+                
+                credentials {
+                    username = System.getenv("MAVEN_CENTRAL_USERNAME") ?: project.findProperty("mavenCentralUsername")
+                    password = System.getenv("MAVEN_CENTRAL_PASSWORD") ?: project.findProperty("mavenCentralPassword")
+                }
+            }
+        }
+    }
+}
+
+// Signing configuration for Maven Central
+signing {
+    def signingKey = System.getenv("SIGNING_KEY") ?: project.findProperty("signing.key")
+    def signingPassword = System.getenv("SIGNING_PASSWORD") ?: project.findProperty("signing.password")
+    
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications.release
+    }
+}
