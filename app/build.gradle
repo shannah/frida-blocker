@@ -139,8 +139,17 @@ afterEvaluate {
     
     // Signing configuration for Maven Central
     signing {
-        // Use GPG command (credentials from ~/.gradle/gradle.properties or GitHub secrets)
-        useGpgCmd()
+        // Try environment variables first (for GitHub Actions), then fall back to GPG command (for local)
+        def signingKey = System.getenv("SIGNING_KEY")
+        def signingPassword = System.getenv("SIGNING_PASSWORD")
+        
+        if (signingKey && signingPassword) {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+        } else {
+            // Use GPG command with credentials from ~/.gradle/gradle.properties
+            useGpgCmd()
+        }
+        
         sign publishing.publications.release
     }
 }

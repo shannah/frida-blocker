@@ -58,7 +58,10 @@ jobs:
       run: ./gradlew test
       
     - name: Publish to Maven Central Portal
-      run: ./gradlew publishAggregationToCentralPortal -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" -Psigning.gnupg.keyName="${{ secrets.SIGNING_KEY_ID }}" -Psigning.gnupg.passphrase="${{ secrets.SIGNING_PASSPHRASE }}"
+      run: ./gradlew publishAggregationToCentralPortal -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}"
+      env:
+        SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
