@@ -7,11 +7,11 @@ plugins {
 
 android {
     namespace 'ca.weblite.fridablocker'
-    compileSdk 35
+    compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 35
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -58,7 +58,7 @@ dependencies {
 }
 
 // Library version
-ext.libVersion = '1.0.5'
+ext.libVersion = '1.0.6'
 
 // Source and Javadoc tasks
 task androidSourcesJar(type: Jar) {
