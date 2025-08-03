@@ -58,7 +58,7 @@ dependencies {
 }
 
 // Library version
-ext.libVersion = '1.0.1'
+ext.libVersion = '1.0.5'
 
 // Source and Javadoc tasks
 task androidSourcesJar(type: Jar) {
