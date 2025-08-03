@@ -8,7 +8,7 @@ on:
       version:
         description: 'Version to publish'
         required: true
-        default: '1.0.0'
+        default: '1.0.1'
 
 jobs:
   publish:
@@ -40,16 +40,25 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
       
-    - name: Set version from input
+    - name: Set version from manual input
       if: github.event_name == 'workflow_dispatch'
       run: |
+        echo "Setting version to: ${{ github.event.inputs.version }}"
         sed -i "s/ext.libVersion = '.*'/ext.libVersion = '${{ github.event.inputs.version }}'/" app/build.gradle
         
-    - name: Set version from tag
+    - name: Set version from release tag
       if: github.event_name == 'release'
       run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
+        VERSION="${{ github.event.release.tag_name }}"
+        # Remove 'v' prefix if present (e.g., v1.2.3 -> 1.2.3)
+        VERSION=${VERSION#v}
+        echo "Setting version to: $VERSION"
         sed -i "s/ext.libVersion = '.*'/ext.libVersion = '$VERSION'/" app/build.gradle
+        
+    - name: Verify version was set
+      run: |
+        echo "Current version in build.gradle:"
+        grep "ext.libVersion" app/build.gradle
         
     - name: Build library
       run: ./gradlew build
