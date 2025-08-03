@@ -2,6 +2,7 @@ plugins {
     id 'com.android.library'
     id 'maven-publish'
     id 'signing'
+    id 'com.gradleup.nmcp'
 }
 
 android {
@@ -57,7 +58,7 @@ dependencies {
 }
 
 // Library version
-ext.libVersion = '1.0.0'
+ext.libVersion = '1.0.1'
 
 // Source and Javadoc tasks
 task androidSourcesJar(type: Jar) {
@@ -68,7 +69,7 @@ task androidSourcesJar(type: Jar) {
 task androidJavadocJar(type: Jar) {
     archiveClassifier.set('javadoc')
     // Create empty javadoc jar since we don't have extensive docs yet
-    from javadoc.destinationDir
+    from "$buildDir/javadoc"
 }
 
 // Publishing configuration for Maven Central Portal
@@ -80,7 +81,7 @@ afterEvaluate {
                 artifactId = 'fridablocker'
                 version = libVersion
                 
-                artifact bundleReleaseAar
+                artifact "$buildDir/outputs/aar/app-release.aar"
                 artifact androidSourcesJar
                 artifact androidJavadocJar
                 
@@ -133,27 +134,13 @@ afterEvaluate {
                 name = "local"
                 url = uri("${rootProject.buildDir}/repo")
             }
-            
-            maven {
-                name = "central"
-                url = "https://central.sonatype.com/api/v1/publisher/deployments/upload/"
-                
-                credentials {
-                    username = System.getenv("MAVEN_CENTRAL_USERNAME") ?: project.findProperty("mavenCentralUsername")
-                    password = System.getenv("MAVEN_CENTRAL_PASSWORD") ?: project.findProperty("mavenCentralPassword")
-                }
-            }
         }
     }
-}
-
-// Signing configuration for Maven Central
-signing {
-    def signingKey = System.getenv("SIGNING_KEY") ?: project.findProperty("signing.key")
-    def signingPassword = System.getenv("SIGNING_PASSWORD") ?: project.findProperty("signing.password")
     
-    if (signingKey && signingPassword) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
+    // Signing configuration for Maven Central
+    signing {
+        // Use GPG command (credentials from ~/.gradle/gradle.properties or GitHub secrets)
+        useGpgCmd()
         sign publishing.publications.release
     }
 }
