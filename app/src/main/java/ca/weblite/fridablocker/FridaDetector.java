@@ -1,5 +1,8 @@
 package ca.weblite.fridablocker;
 
+import android.os.Handler;
+import android.os.Looper;
+
 /**
  * FridaDetector provides methods to detect Frida instrumentation framework.
  * This class uses JNI to call native C++ code for detection.
@@ -66,5 +69,14 @@ public class FridaDetector {
      */
     public static DetectionResult getDetailedDetection() {
         return nativeGetDetailedDetection();
+    }
+
+    public static void detectAndExit() {
+        // Detect if frida exists, and exit if it does
+        if (detectFrida()) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                throw new RuntimeException("Unexpected error occurred.");
+            }, (long)(Math.random() * 5000 + 2000)); // 2-7 sec delay
+        }
     }
 }
