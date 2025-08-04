@@ -26,20 +26,6 @@ public class FridaDetector {
     public static native DetectionResult nativeGetDetailedDetection();
     
     /**
-     * Performs a comprehensive Frida detection check with debug logging.
-     * @param debug if true, enables detailed debug logging for each test
-     * @return true if Frida is detected, false otherwise
-     */
-    public static native boolean nativeDetectFridaWithDebug(boolean debug);
-    
-    /**
-     * Gets detailed detection results for all checks with debug logging.
-     * @param debug if true, enables detailed debug logging for each test
-     * @return DetectionResult object with detailed information
-     */
-    public static native DetectionResult nativeGetDetailedDetectionWithDebug(boolean debug);
-    
-    /**
      * Checks for Frida processes running on the system.
      * @return true if Frida processes are detected
      */
@@ -70,20 +56,18 @@ public class FridaDetector {
     public static native boolean nativeCheckEnvironment();
     
     /**
+     * Sets debug logging enabled/disabled for the native detection library.
+     * This allows the consuming app to control logging based on its build type.
+     * @param enabled true to enable debug logging, false to disable
+     */
+    public static native void nativeSetDebugLogging(boolean enabled);
+    
+    /**
      * High-level method to detect Frida using all available methods.
      * @return true if Frida is detected by any method
      */
     public static boolean detectFrida() {
         return nativeDetectFrida();
-    }
-    
-    /**
-     * High-level method to detect Frida using all available methods with debug logging.
-     * @param debug if true, enables detailed debug logging for each test
-     * @return true if Frida is detected by any method
-     */
-    public static boolean detectFrida(boolean debug) {
-        return nativeDetectFridaWithDebug(debug);
     }
     
     /**
@@ -95,21 +79,17 @@ public class FridaDetector {
     }
     
     /**
-     * Gets comprehensive detection results with debug logging.
-     * @param debug if true, enables detailed debug logging for each test
-     * @return DetectionResult with detailed breakdown of all checks
+     * Sets debug logging enabled/disabled based on the consuming app's build type.
+     * Call this early in your app initialization.
+     * @param enabled true to enable debug logging (for debug builds), false to disable (for release builds)
      */
-    public static DetectionResult getDetailedDetection(boolean debug) {
-        return nativeGetDetailedDetectionWithDebug(debug);
+    public static void setDebugLogging(boolean enabled) {
+        nativeSetDebugLogging(enabled);
     }
 
     public static void detectAndExit() {
-        detectAndExit(false);
-    }
-
-    public static void detectAndExit(boolean debug) {
         // Detect if frida exists, and exit if it does
-        if (detectFrida(debug)) {
+        if (detectFrida()) {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 throw new RuntimeException("Unexpected error occurred.");
             }, (long)(Math.random() * 5000 + 2000)); // 2-7 sec delay

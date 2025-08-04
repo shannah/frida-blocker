@@ -8,10 +8,26 @@
 #include <android/log.h>
 
 #define LOG_TAG "FridaDetector"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 namespace FridaDetector {
+
+// Runtime debug flag - controlled by consuming app
+static bool g_debugLoggingEnabled = false;
+
+#define LOGD(...) do { \
+    if (g_debugLoggingEnabled) { \
+        __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__); \
+    } \
+} while(0)
+
+void setDebugLogging(bool enabled) {
+    g_debugLoggingEnabled = enabled;
+}
+
+bool isDebugLoggingEnabled() {
+    return g_debugLoggingEnabled;
+}
 
 bool checkFridaProcesses() {
     const std::vector<std::string> fridaProcessNames = {
@@ -83,7 +99,8 @@ bool checkFridaLibraries() {
     const std::vector<std::string> fridaLibraries = {
         "frida-agent",
         "frida-gadget",
-        "libfrida",
+        "libfrida-",
+        "libfrida.so",
         "frida.so"
     };
     
@@ -142,38 +159,34 @@ bool checkFridaEnvironment() {
     return false;
 }
 
-DetectionResult performDetection(bool debug) {
+DetectionResult performDetection() {
     DetectionResult result = {};
     
-    if (debug) {
-        LOGD("Starting Frida detection with debug logging...");
-    } else {
-        LOGD("Starting Frida detection...");
-    }
+    LOGD("Starting Frida detection...");
     
     result.processDetection = checkFridaProcesses();
-    if (debug && result.processDetection) {
-        LOGD("DEBUG: Process detection returned POSITIVE");
+    if (result.processDetection) {
+        LOGD("Process detection returned POSITIVE");
     }
     
     result.portDetection = checkFridaPorts();
-    if (debug && result.portDetection) {
-        LOGD("DEBUG: Port detection returned POSITIVE");
+    if (result.portDetection) {
+        LOGD("Port detection returned POSITIVE");
     }
     
     result.libraryDetection = checkFridaLibraries();
-    if (debug && result.libraryDetection) {
-        LOGD("DEBUG: Library detection returned POSITIVE");
+    if (result.libraryDetection) {
+        LOGD("Library detection returned POSITIVE");
     }
     
     result.fileDetection = checkFridaFiles();
-    if (debug && result.fileDetection) {
-        LOGD("DEBUG: File detection returned POSITIVE");
+    if (result.fileDetection) {
+        LOGD("File detection returned POSITIVE");
     }
     
     result.environmentDetection = checkFridaEnvironment();
-    if (debug && result.environmentDetection) {
-        LOGD("DEBUG: Environment detection returned POSITIVE");
+    if (result.environmentDetection) {
+        LOGD("Environment detection returned POSITIVE");
     }
     
     result.fridaDetected = result.processDetection || 
@@ -182,14 +195,12 @@ DetectionResult performDetection(bool debug) {
                           result.fileDetection || 
                           result.environmentDetection;
     
-    if (debug) {
-        LOGD("DEBUG: Final results - Process: %s, Port: %s, Library: %s, File: %s, Environment: %s",
-             result.processDetection ? "POSITIVE" : "NEGATIVE",
-             result.portDetection ? "POSITIVE" : "NEGATIVE", 
-             result.libraryDetection ? "POSITIVE" : "NEGATIVE",
-             result.fileDetection ? "POSITIVE" : "NEGATIVE",
-             result.environmentDetection ? "POSITIVE" : "NEGATIVE");
-    }
+    LOGD("Final results - Process: %s, Port: %s, Library: %s, File: %s, Environment: %s",
+         result.processDetection ? "POSITIVE" : "NEGATIVE",
+         result.portDetection ? "POSITIVE" : "NEGATIVE", 
+         result.libraryDetection ? "POSITIVE" : "NEGATIVE",
+         result.fileDetection ? "POSITIVE" : "NEGATIVE",
+         result.environmentDetection ? "POSITIVE" : "NEGATIVE");
     
     if (result.fridaDetected) {
         LOGD("Frida detection: POSITIVE");

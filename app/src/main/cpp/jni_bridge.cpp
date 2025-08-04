@@ -3,7 +3,12 @@
 #include <android/log.h>
 
 #define LOG_TAG "FridaBlockerJNI"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+
+#define LOGD(...) do { \
+    if (FridaDetector::isDebugLoggingEnabled()) { \
+        __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__); \
+    } \
+} while(0)
 
 extern "C" {
 
@@ -14,51 +19,11 @@ Java_ca_weblite_fridablocker_FridaDetector_nativeDetectFrida(JNIEnv *env, jclass
     return static_cast<jboolean>(result.fridaDetected);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_ca_weblite_fridablocker_FridaDetector_nativeDetectFridaWithDebug(JNIEnv *env, jclass clazz, jboolean debug) {
-    LOGD("Native Frida detection called with debug=%s", debug ? "true" : "false");
-    FridaDetector::DetectionResult result = FridaDetector::performDetection(static_cast<bool>(debug));
-    return static_cast<jboolean>(result.fridaDetected);
-}
-
 JNIEXPORT jobject JNICALL
 Java_ca_weblite_fridablocker_FridaDetector_nativeGetDetailedDetection(JNIEnv *env, jclass clazz) {
     LOGD("Native detailed Frida detection called");
     
     FridaDetector::DetectionResult result = FridaDetector::performDetection();
-    
-    // Find the DetectionResult class
-    jclass detectionResultClass = env->FindClass("ca/weblite/fridablocker/DetectionResult");
-    if (detectionResultClass == nullptr) {
-        LOGD("Failed to find DetectionResult class");
-        return nullptr;
-    }
-    
-    // Get the constructor
-    jmethodID constructor = env->GetMethodID(detectionResultClass, "<init>", "(ZZZZZZ)V");
-    if (constructor == nullptr) {
-        LOGD("Failed to find DetectionResult constructor");
-        return nullptr;
-    }
-    
-    // Create the Java object
-    jobject detectionResultObj = env->NewObject(detectionResultClass, constructor,
-        static_cast<jboolean>(result.fridaDetected),
-        static_cast<jboolean>(result.processDetection),
-        static_cast<jboolean>(result.portDetection),
-        static_cast<jboolean>(result.libraryDetection),
-        static_cast<jboolean>(result.fileDetection),
-        static_cast<jboolean>(result.environmentDetection)
-    );
-    
-    return detectionResultObj;
-}
-
-JNIEXPORT jobject JNICALL
-Java_ca_weblite_fridablocker_FridaDetector_nativeGetDetailedDetectionWithDebug(JNIEnv *env, jclass clazz, jboolean debug) {
-    LOGD("Native detailed Frida detection called with debug=%s", debug ? "true" : "false");
-    
-    FridaDetector::DetectionResult result = FridaDetector::performDetection(static_cast<bool>(debug));
     
     // Find the DetectionResult class
     jclass detectionResultClass = env->FindClass("ca/weblite/fridablocker/DetectionResult");
@@ -110,6 +75,11 @@ Java_ca_weblite_fridablocker_FridaDetector_nativeCheckFiles(JNIEnv *env, jclass 
 JNIEXPORT jboolean JNICALL
 Java_ca_weblite_fridablocker_FridaDetector_nativeCheckEnvironment(JNIEnv *env, jclass clazz) {
     return static_cast<jboolean>(FridaDetector::checkFridaEnvironment());
+}
+
+JNIEXPORT void JNICALL
+Java_ca_weblite_fridablocker_FridaDetector_nativeSetDebugLogging(JNIEnv *env, jclass clazz, jboolean enabled) {
+    FridaDetector::setDebugLogging(static_cast<bool>(enabled));
 }
 
 } // extern "C"
