@@ -14,11 +14,51 @@ Java_ca_weblite_fridablocker_FridaDetector_nativeDetectFrida(JNIEnv *env, jclass
     return static_cast<jboolean>(result.fridaDetected);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_ca_weblite_fridablocker_FridaDetector_nativeDetectFridaWithDebug(JNIEnv *env, jclass clazz, jboolean debug) {
+    LOGD("Native Frida detection called with debug=%s", debug ? "true" : "false");
+    FridaDetector::DetectionResult result = FridaDetector::performDetection(static_cast<bool>(debug));
+    return static_cast<jboolean>(result.fridaDetected);
+}
+
 JNIEXPORT jobject JNICALL
 Java_ca_weblite_fridablocker_FridaDetector_nativeGetDetailedDetection(JNIEnv *env, jclass clazz) {
     LOGD("Native detailed Frida detection called");
     
     FridaDetector::DetectionResult result = FridaDetector::performDetection();
+    
+    // Find the DetectionResult class
+    jclass detectionResultClass = env->FindClass("ca/weblite/fridablocker/DetectionResult");
+    if (detectionResultClass == nullptr) {
+        LOGD("Failed to find DetectionResult class");
+        return nullptr;
+    }
+    
+    // Get the constructor
+    jmethodID constructor = env->GetMethodID(detectionResultClass, "<init>", "(ZZZZZZ)V");
+    if (constructor == nullptr) {
+        LOGD("Failed to find DetectionResult constructor");
+        return nullptr;
+    }
+    
+    // Create the Java object
+    jobject detectionResultObj = env->NewObject(detectionResultClass, constructor,
+        static_cast<jboolean>(result.fridaDetected),
+        static_cast<jboolean>(result.processDetection),
+        static_cast<jboolean>(result.portDetection),
+        static_cast<jboolean>(result.libraryDetection),
+        static_cast<jboolean>(result.fileDetection),
+        static_cast<jboolean>(result.environmentDetection)
+    );
+    
+    return detectionResultObj;
+}
+
+JNIEXPORT jobject JNICALL
+Java_ca_weblite_fridablocker_FridaDetector_nativeGetDetailedDetectionWithDebug(JNIEnv *env, jclass clazz, jboolean debug) {
+    LOGD("Native detailed Frida detection called with debug=%s", debug ? "true" : "false");
+    
+    FridaDetector::DetectionResult result = FridaDetector::performDetection(static_cast<bool>(debug));
     
     // Find the DetectionResult class
     jclass detectionResultClass = env->FindClass("ca/weblite/fridablocker/DetectionResult");

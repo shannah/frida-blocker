@@ -142,22 +142,54 @@ bool checkFridaEnvironment() {
     return false;
 }
 
-DetectionResult performDetection() {
+DetectionResult performDetection(bool debug) {
     DetectionResult result = {};
     
-    LOGD("Starting Frida detection...");
+    if (debug) {
+        LOGD("Starting Frida detection with debug logging...");
+    } else {
+        LOGD("Starting Frida detection...");
+    }
     
     result.processDetection = checkFridaProcesses();
+    if (debug && result.processDetection) {
+        LOGD("DEBUG: Process detection returned POSITIVE");
+    }
+    
     result.portDetection = checkFridaPorts();
+    if (debug && result.portDetection) {
+        LOGD("DEBUG: Port detection returned POSITIVE");
+    }
+    
     result.libraryDetection = checkFridaLibraries();
+    if (debug && result.libraryDetection) {
+        LOGD("DEBUG: Library detection returned POSITIVE");
+    }
+    
     result.fileDetection = checkFridaFiles();
+    if (debug && result.fileDetection) {
+        LOGD("DEBUG: File detection returned POSITIVE");
+    }
+    
     result.environmentDetection = checkFridaEnvironment();
+    if (debug && result.environmentDetection) {
+        LOGD("DEBUG: Environment detection returned POSITIVE");
+    }
     
     result.fridaDetected = result.processDetection || 
                           result.portDetection || 
                           result.libraryDetection || 
                           result.fileDetection || 
                           result.environmentDetection;
+    
+    if (debug) {
+        LOGD("DEBUG: Final results - Process: %s, Port: %s, Library: %s, File: %s, Environment: %s",
+             result.processDetection ? "POSITIVE" : "NEGATIVE",
+             result.portDetection ? "POSITIVE" : "NEGATIVE", 
+             result.libraryDetection ? "POSITIVE" : "NEGATIVE",
+             result.fileDetection ? "POSITIVE" : "NEGATIVE",
+             result.environmentDetection ? "POSITIVE" : "NEGATIVE");
+    }
     
     if (result.fridaDetected) {
         LOGD("Frida detection: POSITIVE");

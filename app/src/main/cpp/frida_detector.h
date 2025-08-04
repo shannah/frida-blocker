@@ -20,7 +20,7 @@ bool checkFridaFiles();
 bool checkFridaEnvironment();
 
 // Main detection function
-DetectionResult performDetection();
+DetectionResult performDetection(bool debug = false);
 
 } // namespace FridaDetector
 
